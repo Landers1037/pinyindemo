@@ -16,7 +16,7 @@ from PyQt5.Qt import *
 from PyQt5.QtCore import *
 import PIL
 from PIL import *
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap,QFontDatabase
 from pinyin_png import img as png
 import base64
 import os
@@ -38,9 +38,9 @@ class MainUi(QtWidgets.QMainWindow):
 
     def init_ui(self):
         self.setFixedSize(960, 400)
-        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 隐藏边框
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # 设置窗口背景透明
-        # self.setWindowOpacity(0.95)  # 设置窗口透明度
+        # self.setWindowFlag(QtCore.Qt.FramelessWindowHint)  # 隐藏边框
+        # self.setAttribute(QtCore.Qt.WA_TranslucentBackground)  # 设置窗口背景透明
+        # self.setWindowOpacity(0.9)  # 设置窗口透明度
         self.main_widget = QtWidgets.QWidget()  # 创建窗口主部件
         self.main_layout = QtWidgets.QGridLayout()  # 创建主部件的网格布局
         self.main_widget.setLayout(self.main_layout)  # 设置窗口主部件布局为网格布局
@@ -62,7 +62,7 @@ class MainUi(QtWidgets.QMainWindow):
         self.setCentralWidget(self.main_widget)  # 设置窗口主部件
 
         #左半边的按钮设计
-        self.qlabel = QPushButton('拼音模板by landers')
+        self.qlabel = QPushButton('拼音模板by Landers')
         self.qlabel.setStyleSheet('''
             QPushButton{
                     border:none;
@@ -104,6 +104,8 @@ class MainUi(QtWidgets.QMainWindow):
 
         #右半边的组件设计
         self.text = QLabel('预览...')
+        QFontDatabase.addApplicationFont('pinyin.ttf')
+        self.text.setFont(QFont('汉语拼音'))
         pic = QPixmap(r'muban.png')
         self.lbox = QLabel()
         self.lbox.setPixmap(pic)
@@ -114,9 +116,7 @@ class MainUi(QtWidgets.QMainWindow):
                     color:black;
                     ''')
         self.text.setStyleSheet('''
-                            font-size:90px;
-                            font-family:"汉语拼音";
-                            
+                            font-size:90px;                
                             ''')
         self.textbox = QTextEdit()
         self.textbox.setStyleSheet('''
@@ -251,6 +251,7 @@ class MainUi(QtWidgets.QMainWindow):
         global str
         self.textbox.setText(None)
         self.text.setText(None)
+        self.zixuan.zhuyinstr = ''
         str = ''
         self.status.setText('状态:已清空')
 
@@ -423,10 +424,15 @@ class pinyinzixuan(QDialog):
         lb2 = QPushButton('声 母')
         lglobal = QPushButton('确定')
         self.showlb = QLabel('预览')
+        self.clean = QPushButton('清空')
+        self.delete = QPushButton('退格')
         lgrid.addWidget(lb1, 0, 0, 1, 6)
         lgrid.addWidget(lb2, 2, 0, 1, 6)
         lgrid.addWidget(lglobal, 6, 3, 1, 3)
         lgrid.addWidget(self.showlb,7,0,1,8)
+        lgrid.addWidget(self.clean,8,0,1,3)
+        lgrid.addWidget(self.delete, 8, 3, 1, 3)
+
         #布局样式管理
         left.setStyleSheet('''  
                     QPushButton{                   
@@ -514,7 +520,8 @@ class pinyinzixuan(QDialog):
         r3.clicked.connect(lambda: self.yinbiao(r3))
         r4.clicked.connect(lambda: self.yinbiao(r4))
         r0.clicked.connect(self.noyinbiao)
-
+        self.clean.clicked.connect(self.cleanstr)
+        self.delete.clicked.connect(self.deletestr)
 
     def set(self,btn):
         self.zhuyinstr = self.zhuyinstr + btn.text()
@@ -544,6 +551,14 @@ class pinyinzixuan(QDialog):
             self.yunflag = 'u'
         elif latter == 'ü':
             self.yunflag = 'v'
+
+    def cleanstr(self):
+        self.zhuyinstr = ''
+        self.showlb.setText(self.zhuyinstr)
+
+    def deletestr(self):
+        self.zhuyinstr = self.zhuyinstr[:-1]
+        self.showlb.setText(self.zhuyinstr)
 
     def yinbiao(self,btn):
         n = int(btn.text().replace('声', ''))
@@ -585,6 +600,19 @@ class zhuyin(QDialog):
 
     def initui(self):
         self.setWindowTitle('汉字注音功能')
+        self.setFixedSize(500,500)
+        self.imglabel = QLabel()
+        self.l = QLabel('我')
+        pic = QPixmap(r'tian.jpg')
+        self.imglabel.setPixmap(pic)
+        QFontDatabase.addApplicationFont('fangzheng.TTC')
+        self.l.setFont(QFont('方正楷体拼音字库01'))
+        self.imglabel.move(20,10)
+
+
+        # layout = QVBoxLayout()
+        # self.setLayout(layout)
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
