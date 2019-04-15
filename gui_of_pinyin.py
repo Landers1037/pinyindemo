@@ -11,6 +11,7 @@
 '''
 from PyQt5 import QtCore,QtGui,QtWidgets
 import sys
+import os
 from PyQt5.QtWidgets import *
 from PyQt5.Qt import *
 from PyQt5.QtCore import *
@@ -27,11 +28,12 @@ from PIL import Image
 from PIL import ImageDraw
 
 #定义一个全局的字符串用于预览和向保存函数传递
-str = '预览'
+pinyinstr = ' '
 
 class MainUi(QtWidgets.QMainWindow):
     flag = True
     adv_flag = True
+    cwd =os.getcwd()
     def __init__(self):
         super().__init__()
         self.init_ui()
@@ -239,6 +241,7 @@ class MainUi(QtWidgets.QMainWindow):
 
         #高级功能窗口
         self.zixuan = pinyinzixuan()
+        self.zixuan.dialogsignal.connect(self.signalslot)
         self.zhuyin = zhuyin()
         p = QPixmap(r'a.jpg')
         self.d = QMessageBox(self)
@@ -248,29 +251,30 @@ class MainUi(QtWidgets.QMainWindow):
         self.d.setIconPixmap(p)
 
     def clean(self):
-        global str
+        global pinyinstr
         self.textbox.setText(None)
         self.text.setText(None)
         self.zixuan.zhuyinstr = ''
-        str = ''
+        pinyinstr = ''
         self.status.setText('状态:已清空')
 
     def drawtext(self):
-        global str
-        self.text.setText(str)
+        global pinyinstr
+        self.text.setText(pinyinstr)
         self.status.setText('状态:预览')
 
+
     def updatetext(self):
-        global str
-        str = self.textbox.toPlainText()
+        global pinyinstr
+        pinyinstr = self.textbox.toPlainText()
 
     def save(self):
-        global str
-        num = len(str) / 16
+        global pinyinstr
+        num = len(pinyinstr) / 16
         n = math.ceil(num)
         ls = []
         for i in range(n): #过长自动换行
-            ls.append(str[0 + 16 * i:16 + 16 * i])
+            ls.append(pinyinstr[0 + 16 * i:16 + 16 * i])
         tmp = open('pinyin.png', 'wb')
         tmp.write(base64.b64decode(png))
         tmp.close()
@@ -290,7 +294,9 @@ class MainUi(QtWidgets.QMainWindow):
             for pstr in ls:
                 time = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
                 draw.text((x, y), pstr, (0, 0, 0), font=font)  # 设置位置坐标 文字 颜色 字体
-                im1.save(r'C:\\Users\Administrator\Desktop\\{}.png'.format(time))
+                # im1.save(r'C:\\Users\Administrator\Desktop\\{}.png'.format(time))
+                filename, filetype = QFileDialog.getSaveFileName(self, '文件保存', self.cwd, "PNG File(*.png)")
+                im1.save(filename)
         except:
             QMessageBox.warning(self,'错误','找不到拼音字体，检查路径')
 
@@ -358,7 +364,12 @@ class MainUi(QtWidgets.QMainWindow):
         if not self.adv_flag:
             QMessageBox.warning(self,'未激活','软件未激活，无法使用高级功能')
         else:
+
             self.zixuan.show()
+
+    def signalslot(self,s):
+        self.text.setText(s)
+
 
     def zhuyinbox(self):
         if not self.adv_flag:
@@ -371,6 +382,8 @@ class MainUi(QtWidgets.QMainWindow):
 class pinyinzixuan(QDialog):
     #定义传递用的注音字符串
     zhuyinstr = ''
+    #自定义的信号槽
+    dialogsignal = pyqtSignal(str)
     def __init__(self):
         super().__init__()
         self.initui()
@@ -399,7 +412,7 @@ class pinyinzixuan(QDialog):
         self.e = ['e','ē','é','ě','è']
         self.i = ['i','ī','í','ǐ','ì']
         self.u = ['u','ū','ú','ǔ','ù']
-        self.v = ['v','ǖ','ǘ','ǚ','ǜ']
+        self.v = ['ü','ǖ','ǘ','ǚ','ǜ']
         self.yunflag = 'a'
 
         for latter ,pos in zip(list1,range(6)):
@@ -533,13 +546,16 @@ class pinyinzixuan(QDialog):
         self.zhuyinstr = self.zhuyinstr + ' '
         self.showlb.setText(self.zhuyinstr)
 
+
     def settobox(self):
-        global str
-        str = self.zhuyinstr
+        global pinyinstr
+        pinyinstr = self.zhuyinstr
+        self.dialogsignal.emit(pinyinstr)
+
 
     def setflag(self,btn):
         latter = btn.text()
-        if latter == 'a':
+        if latter == 'ɑ':
             self.yunflag = 'a'
         elif latter =='o':
             self.yunflag = 'o'
@@ -600,18 +616,24 @@ class zhuyin(QDialog):
 
     def initui(self):
         self.setWindowTitle('汉字注音功能')
-        self.setFixedSize(500,500)
-        self.imglabel = QLabel()
-        self.l = QLabel('我')
+        self.setFixedSize(500,600)
+        self.imglabel = QLabel(self)
+        self.l = QLabel('猪',self)
+        self.l.setStyleSheet('''
+                        boreder:none;
+                        height:80px;
+                        font-size:400px;
+                        width:80px;''')
+
         pic = QPixmap(r'tian.jpg')
         self.imglabel.setPixmap(pic)
         QFontDatabase.addApplicationFont('fangzheng.TTC')
+        self.imglabel.move(30,160)
         self.l.setFont(QFont('方正楷体拼音字库01'))
-        self.imglabel.move(20,10)
+        self.l.move(20, 0)
 
 
-        # layout = QVBoxLayout()
-        # self.setLayout(layout)
+
 
 
 def main():
